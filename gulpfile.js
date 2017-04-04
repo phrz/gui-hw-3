@@ -4,6 +4,7 @@ const gulp = require('gulp');
 const del = require('del');
 const browserSync = require('browser-sync').create();
 const ts = require('gulp-typescript');
+const sourcemaps = require('gulp-sourcemaps');
 
 let build_dir = './build/';
 let source_dir = './src/';
@@ -14,28 +15,34 @@ let paths = {
 	ts: source_dir + '**/*.ts'
 }
 
-gulp.task('html', () => {
-	gulp.src(paths.html, { base: source_dir })
+gulp.task('html', (done) => {
+	gulp
+	.src(paths.html, { base: source_dir })
 	.pipe(gulp.dest(build_dir));
+	done();
 });
 
-gulp.task('css', () => {
-	gulp.src(paths.css, { base: source_dir })
+gulp.task('css', (done) => {
+	gulp
+	.src(paths.css, { base: source_dir })
 	.pipe(gulp.dest(build_dir))
-	.pipe(browserSync.stream());
+	.pipe(browserSync.reload({stream: true}));
+	done();
 });
 
-gulp.task('ts', () => {
+gulp.task('ts', (done) => {
 	let project = ts.createProject('tsconfig.json');
-	let tsc = gulp
-		.src(paths.ts, { base: source_dir })
-		.pipe(project())
-		.pipe(gulp.dest(build_dir));
+	gulp
+	.src(paths.ts, { base: source_dir })
+	.pipe(project())
+	.pipe(gulp.dest(build_dir));
+	done();
 });
 
-gulp.task('bootstrap', () => {
+gulp.task('bootstrap', (done) => {
 	gulp.src('./node_modules/bootstrap/dist/**/*.*', { base: 'node_modules/bootstrap/dist' })
 	.pipe(gulp.dest(build_dir + 'vendor/bootstrap'));
+	done();
 });
 
 gulp.task('clean', () => {
@@ -50,14 +57,13 @@ gulp.task('watch', () => {
 });
 
 gulp.task('serve', () => {
-	browserSync.init({
-		server: build_dir
-	});
-	gulp.start('watch');
+	setTimeout(() => {
+		browserSync.init({
+			server: build_dir
+		});
+	}, 100);
 });
 
-gulp.task('run', ['build-and-clean'], () => { gulp.start('serve'); });
-
-gulp.task('build-and-clean', ['clean'], () => { gulp.start('build'); });
-gulp.task('build', ['html', 'css', 'ts', 'bootstrap']);
-gulp.task('default', ['build']);
+gulp.task('build', gulp.series('bootstrap', gulp.parallel('html', 'css', 'ts')));
+gulp.task('default', gulp.parallel('build'));
+gulp.task('run', gulp.series('clean','build','serve','watch'));
