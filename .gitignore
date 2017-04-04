@@ -38,3 +38,8 @@ jspm_packages
 
 # MY OWN RULES
 /build/
+/coverage/
+.DS_Store
+npm-debug.log
+/dist/
+/typings/
